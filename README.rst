@@ -1,69 +1,54 @@
 
-.. image:: https://travis-ci.org/MacHu-GWU/learn_aws_msk-project.svg?branch=master
-    :target: https://travis-ci.org/MacHu-GWU/learn_aws_msk-project?branch=master
-
-.. image:: https://codecov.io/gh/MacHu-GWU/learn_aws_msk-project/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/MacHu-GWU/learn_aws_msk-project
-
-.. image:: https://img.shields.io/pypi/v/learn_aws_msk.svg
-    :target: https://pypi.python.org/pypi/learn_aws_msk
-
-.. image:: https://img.shields.io/pypi/l/learn_aws_msk.svg
-    :target: https://pypi.python.org/pypi/learn_aws_msk
-
-.. image:: https://img.shields.io/pypi/pyversions/learn_aws_msk.svg
-    :target: https://pypi.python.org/pypi/learn_aws_msk
-
-.. image:: https://img.shields.io/badge/STAR_Me_on_GitHub!--None.svg?style=social
-    :target: https://github.com/MacHu-GWU/learn_aws_msk-project
-
-------
-
-
-.. image:: https://img.shields.io/badge/Link-Document-blue.svg
-    :target: http://learn_aws_msk.my-docs.com/index.html
-
-.. image:: https://img.shields.io/badge/Link-API-blue.svg
-    :target: http://learn_aws_msk.my-docs.com/py-modindex.html
-
-.. image:: https://img.shields.io/badge/Link-Source_Code-blue.svg
-    :target: http://learn_aws_msk.my-docs.com/py-modindex.html
-
-.. image:: https://img.shields.io/badge/Link-Install-blue.svg
-    :target: `install`_
-
-.. image:: https://img.shields.io/badge/Link-GitHub-blue.svg
-    :target: https://github.com/MacHu-GWU/learn_aws_msk-project
-
-.. image:: https://img.shields.io/badge/Link-Submit_Issue-blue.svg
-    :target: https://github.com/MacHu-GWU/learn_aws_msk-project/issues
-
-.. image:: https://img.shields.io/badge/Link-Request_Feature-blue.svg
-    :target: https://github.com/MacHu-GWU/learn_aws_msk-project/issues
-
-.. image:: https://img.shields.io/badge/Link-Download-blue.svg
-    :target: https://pypi.org/pypi/learn_aws_msk#files
-
-
-Welcome to ``learn_aws_msk`` Documentation
-==============================================================================
-
-Documentation for ``learn_aws_msk``.
-
-
-.. _install:
-
-Install
+配置 AWS MSK Kafka 集群
 ------------------------------------------------------------------------------
 
-``learn_aws_msk`` is released on PyPI, so all you need is:
+.. contents::
+    :depth: 1
+    :local:
 
-.. code-block:: console
+1. 为 MSK Cluster 创建 VPC
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    $ pip install learn_aws_msk
 
-To upgrade to latest version:
 
-.. code-block:: console
 
-    $ pip install --upgrade learn_aws_msk
+This runbook is primarily from https://docs.aws.amazon.com/msk/latest/developerguide/getting-started.html
+
+
+.. code-block:: bash
+
+    # install java, kafka bin tool depends on java
+    sudo yum install java-1.8.0 -y
+
+    # install kafka (and bin tool)
+    cd ~
+    wget https://archive.apache.org/dist/kafka/2.2.1/kafka_2.12-2.2.1.tgz
+    tar -xzf kafka_2.12-2.2.1.tgz
+
+    # set default region
+    aws configure
+
+    # create a topic
+    msk_arn="arn:aws:kafka:us-east-1:669508176277:cluster/sanhe-dev/3d5b6e3a-6077-47b0-9e6f-e20e4a988e43-17"
+    zk_conn_str="$(aws kafka describe-cluster --region us-east-1 --cluster-arn ${msk_arn} | jq '.ClusterInfo.ZookeeperConnectString' -r)"
+    ~/kafka_2.12-2.2.1/bin/kafka-topics.sh --create --zookeeper "${zk_conn_str}" --replication-factor 3 --partitions 1 --topic AWSKafkaExample
+
+    ~/kafka_2.12-2.2.1/bin/kafka-topics.sh --list --zookeeper "${zk_conn_str}"
+
+.. code-block:: bash
+
+    cp /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.302.b08-0.amzn2.0.1.x86_64/jre/lib/security/cacerts /tmp/kafka.client.truststore.jks
+    kafka_home="${HOME}/kafka_2.12-2.2.1"
+    msk_arn="arn:aws:kafka:us-east-1:669508176277:cluster/sanhe-dev/3d5b6e3a-6077-47b0-9e6f-e20e4a988e43-17"
+    broker_str="$(aws kafka get-bootstrap-brokers --region us-east-1 --cluster-arn ${msk_arn} | jq '.BootstrapBrokerStringTls' -r)"
+    ${kafka_home}/bin/kafka-console-producer.sh --broker-list "${broker_str}" --producer.config client.properties --topic AWSKafkaExample
+
+.. code-block:: bash
+
+    ${kafka_home}/bin/kafka-console-consumer.sh --bootstrap-server "${broker_str}" --consumer.config ${kafka_home}/bin/client.properties --topic AWSKafkaExample --from-beginning
+
+
+
+    aws kafka get-bootstrap-brokers --cluster-arn ${msk_arn}
+
+

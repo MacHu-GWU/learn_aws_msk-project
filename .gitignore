@@ -2,7 +2,7 @@
 learn_aws_msk_venv/
 learn_aws_msk.egg-info/
 learn_aws_msk-*/
-
+tmp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
